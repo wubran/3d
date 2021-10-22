@@ -2,6 +2,7 @@
 <html style="padding:0;margin:0;">
 	<body style="padding:0;margin:0;overflow: hidden;">
 		<canvas id="screen"></canvas>
+		<script type="text/javascript" src="slider.js"></script>
 		<script>
 			canvascolor = "rgba(19, 23, 26, 1)";
 			var canvas = document.getElementById('screen');
@@ -18,6 +19,9 @@
 			var ycenter = canvas.height/2;
 			var bigness = 15; // overall scale factor
 			var initcamdist = 60; // fov effects (becomes orthographic as approaches infinity)
+			var flammability = 0.01;
+			var burntime = 1;
+			var sliding = false;
 
 			canvasResize(true);
 
@@ -65,27 +69,49 @@
 				}
 			}, false);
 
-			function tempmove(){
-
-				fillscreen();
-				camera.update();
-				draworigin();
-				drawnet(cube);
-				// testpoint.project(camera);
-				// testpoint.draw();
-			}
+			function getBurntime(){return burntime;}
+			function setBurntime(setTo){burntime = setTo;}
+			var burnTimeSlider = new Slider("idk lol", 3, 1, 20, canvas.width/10, setBurntime, canvas.height/2.5, getBurntime, 0)
+			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
+			function getCamdist(){return initcamdist;}
+			function setCamdist(setTo){initcamdist = setTo;}
+			var camdistSlider = new Slider("focal length", 60, 12, 180, canvas.width/10, setCamdist, canvas.height/2.5, getCamdist, 0)
+			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
 
 			function onClick(event){
-				click = true;
+				if(canvas.style.cursor == "pointer"){
+					burnTimeSlider.clickEvent(event.clientX, event.clientY)
+					camdistSlider.clickEvent(event.clientX, event.clientY)
+					sliding = true;
+				}else{
+					click = true;
+				}
 			}
 
 			function onRelease(event){
 				click = false;
+				sliding = false;
+				burnTimeSlider.releaseEvent()
+				camdistSlider.releaseEvent()
+
 			}
 
 			function onMouseMove(event){
 			  mouseX = event.pageX;
 			  mouseY = event.pageY;
+				burnTimeSlider.mouseMove(mouseX, mouseY)
+				camdistSlider.mouseMove(mouseX, mouseY)
+				if(click){
+
+				}else if(sliding){
+					camera.pdist = initcamdist;
+					let scalefac = initcamdist/Math.hypot(camera.pos[0], camera.pos[1], camera.pos[2]);
+					for(var i = 0; i < 3; i++){
+						camera.pos[i] *= scalefac;
+					}
+
+					tempmove();
+				}
 			}
 
 			function onMouseLeave(event){
@@ -174,7 +200,7 @@
 						// let flaty = this.pos[1]*Math.cos(-this.yaw) + this.pos[0]*Math.sin(-this.yaw); // (this makes y = 0) the point is now on the xz plane
 						let sideradius = Math.hypot(flatx-this.origin[0], this.pos[2]-this.origin[2]);
 						this.pitch+=pitch;
-						
+
 						if(this.pitch >= 2*Math.PI){
 							this.pitch -= 2*Math.PI;
 						} else if(this.pitch < 0){
@@ -325,10 +351,20 @@
 				}
 			}
 
+			function tempmove(){
+
+				fillscreen();
+				camera.update();
+				draworigin();
+				drawnet(cube);
+				// testpoint.project(camera);
+				// testpoint.draw();
+			}
+
 			function fillscreen(){
 				ctx.fillStyle = canvascolor;
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
-				ctx.font = canvas.width / 30 + "px Arial";
+				ctx.font = canvas.width / 40 + "px Arial";
 				ctx.fillStyle = "rgba(255, 245, 80, 1)";
 				ctx.fillText("brian's 3d projector :D", canvas.width/54, canvas.height/12);
 
@@ -337,6 +373,8 @@
 				ctx.arc(xcenter, ycenter, 4, 0, 2 * Math.PI);
 				ctx.fill();
 
+				burnTimeSlider.draw(4*canvas.width/20, 5*canvas.height/40);
+				camdistSlider.draw(4*canvas.width/20, 10*canvas.height/40);
 			}
 			setInterval(function(){
 				if(click){
@@ -348,7 +386,7 @@
 
 
 			window.onresize = canvasResize;
-			function canvasResize(first) {
+			function canvasResize(initialize) {
 			  canvas.width  = window.innerWidth;
 			  canvas.height = window.innerHeight;
 			  ctx.fillStyle = '#13171A';
@@ -356,8 +394,9 @@
 			  ctx.fillRect(0, 0, canvas.width, canvas.height);
 				xcenter = canvas.width/2;
 				ycenter = canvas.height/2;
-				if(!first){
+				if(initialize != true){
 					tempmove();
+					console.log("boop")
 				}
 			}
 
