@@ -88,7 +88,7 @@ class Slider {
     ctx.moveTo(containerX-7*this.containerWidth/8, elementY+5*this.elementHeight/8);
     ctx.lineTo(containerX-this.containerWidth/8, elementY+5*this.elementHeight/8);
     this.sliderLocationRange = [containerX-7*this.containerWidth/8, containerX-this.containerWidth/8];
-    ctx.fillStyle = "rgba(255, 120, 120, 0.7)";
+    ctx.fillStyle = blurple;
     ctx.fill();
     ctx.closePath();
     ctx.stroke();
@@ -102,12 +102,11 @@ class Slider {
     this.sliderPos = [containerX-7*this.containerWidth/8+point, elementY+5*this.elementHeight/8, this.containerWidth/48];
 
     ctx.font = canvas.width / 90 + "px Arial";
-    ctx.fillStyle = "rgba(255, 180, 80, 1)";
     var textOffset = -1*ctx.measureText(Math.round((10**this.roundPlaces)*this.value)/(10**this.roundPlaces)).width/2;
     ctx.fillText(Math.round((10**this.roundPlaces)*this.value)/(10**this.roundPlaces), point+textOffset+containerX-7*this.containerWidth/8, (elementY+5*this.elementHeight/8)+this.containerWidth/14);
 
     ctx.font = canvas.width / 60 + "px Arial";
-    ctx.fillStyle = "rgba(255, 180, 80, 1)";
+    ctx.fillStyle = blurple;
     ctx.fillText(this.name, -1*this.containerWidth/48+containerX-7*this.containerWidth/8, elementY+this.containerWidth/8);
   }
 }

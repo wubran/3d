@@ -5,6 +5,8 @@
 		<script type="text/javascript" src="slider.js"></script>
 		<script>
 			canvascolor = "rgba(19, 23, 26, 1)";
+			blurple = "rgba(140, 150, 250, 1)";
+			gray = "rgba(153, 170, 181, 1)";
 			var canvas = document.getElementById('screen');
 			var ctx = canvas.getContext('2d');
 
@@ -13,7 +15,6 @@
 
 			items = []
 
-			//var click = false
 			var butt = 0; // 0 left, 1 middle, 2 right
 			var mouseX = 0;
 			var mouseY = 0;
@@ -31,7 +32,6 @@
 			var clickstart = [0,0];
 
 			canvasResize(true);
-
 
 			canvas.addEventListener('mousedown', onClick);
 			canvas.addEventListener("mouseup", onRelease);
@@ -55,22 +55,6 @@
 						pause = !pause;
 						refresh(); //to display the "paused" after paused
 						return;
-					case 'ArrowUp':
-						camera.orbit(0,0.1);
-						refresh()
-						return;
-					case 'ArrowDown':
-						camera.orbit(0,-0.1);
-						refresh()
-						return;
-					case 'ArrowRight':
-						camera.orbit(0.1,0);
-						refresh()
-						return;
-					case 'ArrowLeft':
-					camera.orbit(-0.1,0);
-						refresh()
-						return;
 					// default:
 					// console.log(keyName);
 					// return;
@@ -80,16 +64,10 @@
 			function getBurntime(){return burntime;}
 			function setBurntime(setTo){burntime = setTo;}
 			var burnTimeSlider = new Slider("idk lol", 0.5, 0, 1, canvas.width/10, setBurntime, canvas.height/2.5, getBurntime, 2)
-			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
-
-			// function getCamdist(){return camdistort;}
-			// function setCamdist(setTo){initcamdist = setTo;}
-			// var camdistSlider = new Slider("focal length", 60, 12, 180, canvas.width/10, setCamdist, canvas.height/2.5, getCamdist, 0)
-			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
-
 			function getCamdist(){return 100/camdistort;}
 			function setCamdist(setTo){camdistort = 100/setTo;}
 			var camdistSlider = new Slider("perspective distortion", 100/camdistort, 100/100000, 100/10, canvas.width/10, setCamdist, canvas.height/2.5, getCamdist, 2)
+			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
 
 			function onClick(event){
 				if(canvas.style.cursor == "pointer"){
@@ -103,12 +81,10 @@
 			}
 
 			function onRelease(event){
-				//click = false;
 				butt = -1;
 				sliding = false;
 				burnTimeSlider.releaseEvent()
 				camdistSlider.releaseEvent()
-
 			}
 
 			function onMouseMove(event){
@@ -130,11 +106,9 @@
 					refresh();
 				}
 				clickstart = [mouseX,mouseY];
-
 			}
 
 			function onMouseLeave(event){
-				//click = false;
 				butt = -1;
 			}
 
@@ -305,8 +279,6 @@
 					}
 					//console.log(cam.vector, this.slopes, cam.pconst, this.psect, cam.ppoint, cam.pdistratio);
 
-
-
 					this.jscale = newvector[2]/cam.jhat[2]
 					for(var i = 0; i < 3; i++){
 						newvector[i] -= this.jscale*cam.jhat[i]
@@ -317,9 +289,12 @@
 					//console.log(newvector, cam.jhat, cam.ihat, this.jscale, this.iscale, cam.ppoint, this.psect)
 					this.x = this.iscale*bigness + xcenter;
 					this.y = this.jscale*bigness*Math.sign(cam.vector[2]) + ycenter; //math.sign is a TEMPORARY FIX!!!!
-
 				}
 				draw(){
+					// let pointsize = 200/Math.hypot(this.slopes[0], this.slopes[1],this.slopes[2]);
+					// if(pointsize >= 6){
+					// 	pointsize = 6;
+					// } //issue: pointsize would change with the perspective disortion
 					ctx.fillStyle = this.color;
 					ctx.beginPath();
 					ctx.arc(this.x, this.y, 4, 0, 2 * Math.PI);
@@ -327,13 +302,13 @@
 					//console.log("ok")
 				}
 			}
+
 			let legs = initcamdist/Math.sqrt(3);
 			camera = new Cam(legs,legs,legs);
 			let originpoints = [];
 			originpoints.push(new Point(6,0,0,"red"));
 			originpoints.push(new Point(0,6,0,"lime"));
 			originpoints.push(new Point(0,0,6,"rgba(120,120,255,1)"));
-
 			originpoints.push(new Point(-6,0,0,"red"));
 			originpoints.push(new Point(0,-6,0,"lime"));
 			originpoints.push(new Point(0,0,-6,"rgba(120,120,255,1)"));
@@ -349,20 +324,7 @@
 				new Point(-6,-6,6,netcolor),
 				new Point(-6,-6,-6,netcolor)
 			];
-
-
-
-			camera.update();
-
-			fillscreen();
-			draworigin();
-			drawnet(cube);
-
-
-
-			// var testpoint = new Point(0,6,6, "white");
-			// testpoint.project(camera);
-			// testpoint.draw();
+			refresh();
 
 			function draworigin(){
 				for(let dot of originpoints){
@@ -417,25 +379,17 @@
 			function fillscreen(){
 				ctx.fillStyle = canvascolor;
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				ctx.textAlign = "left"
+
+				burnTimeSlider.draw(4*canvas.width/20, 13*canvas.height/40);
+				camdistSlider.draw(4*canvas.width/20, 18*canvas.height/40);
+
 				ctx.font = canvas.width / 40 + "px Arial";
-				ctx.fillStyle = "rgba(255, 245, 80, 1)";
+				ctx.fillStyle = blurple;
 				ctx.fillText("brian's 3d projector :D", canvas.width/54, canvas.height/12);
 
-				ctx.font = canvas.width / 30 + "px Arial";
-				if(pause){
-      		ctx.fillText("paused", 35*canvas.width/40, 19*canvas.height/20);
-				}
-
-				ctx.fillStyle = "white"; //origin dot
-				ctx.beginPath();
-				ctx.arc(xcenter, ycenter, 4, 0, 2 * Math.PI);
-				ctx.fill();
-
-				burnTimeSlider.draw(4*canvas.width/20, 5*canvas.height/40);
-				camdistSlider.draw(4*canvas.width/20, 10*canvas.height/40);
-
-				ctx.font = canvas.width / 100 + "px Arial";
-				ctx.fillStyle = "rgba(255, 245, 80, 1)";
+				ctx.fillStyle = gray;
+				ctx.font = canvas.width / 90 + "px Arial";
 				let notes =["Pitch/Yaw - Right Mouse",
 										"Slide (translate) - Middle Mouse (not yet)",
 										"Zoom - Scrollwheel",
@@ -443,21 +397,41 @@
 										"Interact - Left Mouse (not yet)"];
 				let spacing = canvas.width/60;
 				for(var i = 0; i < notes.length; i++){
-					ctx.fillText(notes[i], canvas.width/30, 18*canvas.height/40 + spacing*i);
+					ctx.fillText(notes[i], canvas.width/30, 6*canvas.height/40 + spacing*i);
 				}
 
+				ctx.fillStyle = blurple;
+				ctx.font = canvas.width / 30 + "px Arial";
+				if(pause){
+      		ctx.fillText("paused", 35*canvas.width/40, 19*canvas.height/20);
+				}
+
+				ctx.fillStyle = gray;
+				//displays the mesh points
+				ctx.textAlign = "center"
+				ctx.font = canvas.width / 90 + "px Arial";
+				for(var i = 0; i < notes.length; i++){
+					ctx.fillText(cube[i].pos, 28*canvas.width/30, 2*canvas.height/40 + spacing*(i+1));
+				}
+				ctx.fillStyle = blurple;
+				ctx.font = canvas.width / 80 + "px Arial";
+				ctx.fillText("Mesh Points:", 28*canvas.width/30, 2*canvas.height/40);
+
+				ctx.fillStyle = "white"; //origin dot
+				ctx.beginPath();
+				ctx.arc(xcenter, ycenter, 4, 0, 2 * Math.PI);
+				ctx.fill();
+
 			}
+
 			setInterval(function(){
 				if(!pause && (butt <= 0)){
 					camera.orbit(0.01,0);
 					refresh();
-
 				}
-				//refresh()
+
 				if(butt!==-1){ //if not clicking
 					refresh();
-					//testpoint.pos[2]-=0.1;
-					//console.log(testpoint.pos)
 				}
 			}, 1);
 
