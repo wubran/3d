@@ -18,7 +18,7 @@ class Slider {
     this.elementBox = [];
   }
   clickEvent(x, y){
-    if(Math.sqrt(Math.pow(x-this.sliderPos[0], 2) + Math.pow(y-this.sliderPos[1], 2)) <= this.sliderPos[2]){
+    if(Math.sqrt(Math.pow(x-this.sliderPos[0], 2) + Math.pow(y-this.sliderPos[1], 2)) <= 2*this.sliderPos[2]){
       this.isBeingClicked = true;
     }
   }
@@ -31,7 +31,7 @@ class Slider {
   mouseMove(x, y){
     if(this.elementBox[0] < x && x < this.elementBox[2] && this.elementBox[1] < y && y < this.elementBox[3]){
       this.selected = true;
-      if(Math.sqrt(Math.pow(x-this.sliderPos[0], 2) + Math.pow(y-this.sliderPos[1], 2)) <= this.sliderPos[2] || this.isBeingClicked){
+      if(Math.sqrt(Math.pow(x-this.sliderPos[0], 2) + Math.pow(y-this.sliderPos[1], 2)) <= 2*this.sliderPos[2] || this.isBeingClicked){
         canvas.style.cursor = "pointer";
       } else {
         canvas.style.cursor = "default";
@@ -44,7 +44,14 @@ class Slider {
       else if(x > this.sliderLocationRange[1]) {var newX = this.sliderLocationRange[1];}
       else {var newX = x;}
       var pixelRange = this.sliderLocationRange[1] - this.sliderLocationRange[0];
-      this.value = Math.round(this.range*((newX-this.sliderLocationRange[0])/pixelRange)+this.min, this.roundPlaces);
+      this.value = Math.round(10**this.roundPlaces*(this.range*((newX-this.sliderLocationRange[0])/pixelRange)+this.min))/(10**this.roundPlaces);
+      //this.value = this.range*((newX-this.sliderLocationRange[0])/pixelRange)+this.min;
+      if(this.value<this.min){
+        this.value=this.min;
+      }
+      if(this.value>this.max){
+        this.value=this.max;
+      }
       this.updateFunc(this.value);
     }
   }
@@ -96,8 +103,8 @@ class Slider {
 
     ctx.font = canvas.width / 90 + "px Arial";
     ctx.fillStyle = "rgba(255, 180, 80, 1)";
-    var textOffset = -1*ctx.measureText(Math.round(this.value, this.roundPlaces)).width/2;
-    ctx.fillText(Math.round(this.value, this.roundPlaces), point+textOffset+containerX-7*this.containerWidth/8, (elementY+5*this.elementHeight/8)+this.containerWidth/14);
+    var textOffset = -1*ctx.measureText(Math.round((10**this.roundPlaces)*this.value)/(10**this.roundPlaces)).width/2;
+    ctx.fillText(Math.round((10**this.roundPlaces)*this.value)/(10**this.roundPlaces), point+textOffset+containerX-7*this.containerWidth/8, (elementY+5*this.elementHeight/8)+this.containerWidth/14);
 
     ctx.font = canvas.width / 60 + "px Arial";
     ctx.fillStyle = "rgba(255, 180, 80, 1)";

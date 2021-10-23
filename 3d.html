@@ -8,27 +8,34 @@
 			var canvas = document.getElementById('screen');
 			var ctx = canvas.getContext('2d');
 
+			canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
+			//^prevents right click menu (credit to https://stackoverflow.com/questions/10864249/disabling-right-click-context-menu-on-a-html-canvas)
+
 			items = []
 
-			var click = false
+			//var click = false
+			var butt = 0; // 0 left, 1 middle, 2 right
 			var mouseX = 0;
 			var mouseY = 0;
 			var mousemode = 0;
-			var pause = false;
+			var pause = true;
 			var xcenter = canvas.width/2;
 			var ycenter = canvas.height/2;
-			var bigness = 15; // overall scale factor
-			var initcamdist = 60; // fov effects (becomes orthographic as approaches infinity)
+			const planetosize = 20; //increases distance of plane away from camera AND scales everything down
+			var bigness = 15/planetosize; // overall scale factor
+			var initcamdist = 50; // fov effects (becomes orthographic as approaches infinity)
+			var camdistort = 50; // fov effects (becomes orthographic as approaches infinity)
 			var flammability = 0.01;
 			var burntime = 1;
 			var sliding = false;
+			var clickstart = [0,0];
 
 			canvasResize(true);
 
 
 			canvas.addEventListener('mousedown', onClick);
 			canvas.addEventListener("mouseup", onRelease);
-			//canvas.addEventListener("wheel", scroll)
+			canvas.addEventListener("wheel", scroll)
 			canvas.addEventListener('mouseleave', onMouseLeave);
 			canvas.addEventListener('mousemove', onMouseMove);
 			document.addEventListener('keydown', (event) => {
@@ -46,22 +53,23 @@
 						return;
 					case ' ':
 						pause = !pause;
+						refresh(); //to display the "paused" after paused
 						return;
 					case 'ArrowUp':
 						camera.orbit(0,0.1);
-						tempmove()
+						refresh()
 						return;
 					case 'ArrowDown':
 						camera.orbit(0,-0.1);
-						tempmove()
+						refresh()
 						return;
 					case 'ArrowRight':
 						camera.orbit(0.1,0);
-						tempmove()
+						refresh()
 						return;
 					case 'ArrowLeft':
 					camera.orbit(-0.1,0);
-						tempmove()
+						refresh()
 						return;
 					// default:
 					// console.log(keyName);
@@ -71,12 +79,17 @@
 
 			function getBurntime(){return burntime;}
 			function setBurntime(setTo){burntime = setTo;}
-			var burnTimeSlider = new Slider("idk lol", 3, 1, 20, canvas.width/10, setBurntime, canvas.height/2.5, getBurntime, 0)
+			var burnTimeSlider = new Slider("idk lol", 0.5, 0, 1, canvas.width/10, setBurntime, canvas.height/2.5, getBurntime, 2)
 			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
-			function getCamdist(){return initcamdist;}
-			function setCamdist(setTo){initcamdist = setTo;}
-			var camdistSlider = new Slider("focal length", 60, 12, 180, canvas.width/10, setCamdist, canvas.height/2.5, getCamdist, 0)
+
+			// function getCamdist(){return camdistort;}
+			// function setCamdist(setTo){initcamdist = setTo;}
+			// var camdistSlider = new Slider("focal length", 60, 12, 180, canvas.width/10, setCamdist, canvas.height/2.5, getCamdist, 0)
 			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
+
+			function getCamdist(){return 100/camdistort;}
+			function setCamdist(setTo){camdistort = 100/setTo;}
+			var camdistSlider = new Slider("perspective distortion", 100/camdistort, 100/100000, 100/10, canvas.width/10, setCamdist, canvas.height/2.5, getCamdist, 2)
 
 			function onClick(event){
 				if(canvas.style.cursor == "pointer"){
@@ -84,12 +97,14 @@
 					camdistSlider.clickEvent(event.clientX, event.clientY)
 					sliding = true;
 				}else{
-					click = true;
+					//click = true;
+					butt = event.button;
 				}
 			}
 
 			function onRelease(event){
-				click = false;
+				//click = false;
+				butt = -1;
 				sliding = false;
 				burnTimeSlider.releaseEvent()
 				camdistSlider.releaseEvent()
@@ -101,21 +116,30 @@
 			  mouseY = event.pageY;
 				burnTimeSlider.mouseMove(mouseX, mouseY)
 				camdistSlider.mouseMove(mouseX, mouseY)
-				if(click){
+				if(butt == 2){
+					let diffx = mouseX-clickstart[0];
+					let diffy = mouseY-clickstart[1];
+					camera.orbit(-20*diffx/(canvas.width), 20*diffy/(canvas.width));
 
 				}else if(sliding){
-					camera.pdist = initcamdist;
-					let scalefac = initcamdist/Math.hypot(camera.pos[0], camera.pos[1], camera.pos[2]);
+					let scalefac = camdistort/Math.hypot(camera.vector[0], camera.vector[1], camera.vector[2]);
+					camera.pdist *= scalefac;
 					for(var i = 0; i < 3; i++){
 						camera.pos[i] *= scalefac;
 					}
-
-					tempmove();
+					refresh();
 				}
+				clickstart = [mouseX,mouseY];
+
 			}
 
 			function onMouseLeave(event){
-				click = false;
+				//click = false;
+				butt = -1;
+			}
+
+			function scroll(event){
+				camera.zoom(Math.sign(event.deltaY));
 			}
 
 			//MATH SOURCES:
@@ -130,7 +154,7 @@
 					this.origin = [0,0,0];
 					this.vector = [0,0,0]; //also doubles as plane abc
 
-					this.pdist = initcamdist;
+					this.pdist = initcamdist*planetosize;
 					this.ppoint = [0,0,0];
 					this.pconst = 0;
 					this.pdistratio = 0;
@@ -175,15 +199,17 @@
 						//pitch.... dagnabbit
 						//given an angle, move x this way and y this way along circle with radius _.
 						let topradius = Math.hypot(this.pos[0]-this.origin[0], this.pos[1]-this.origin[1]);
-						this.yaw+=yaw;
-						this.pos[0] = topradius * Math.cos(this.yaw);
-						this.pos[1] = topradius * Math.sin(this.yaw);
 
+						this.yaw+=yaw;
 						if(this.yaw >= 2*Math.PI){
 							this.yaw -= 2*Math.PI;
 						} else if(this.yaw < 0){
 							this.yaw += 2*Math.PI;
 						}
+
+						this.pos[0] = topradius * Math.cos(this.yaw);
+						this.pos[1] = topradius * Math.sin(this.yaw);
+
 
 						// end yaw, start pitch
 
@@ -199,13 +225,20 @@
 					  }
 						// let flaty = this.pos[1]*Math.cos(-this.yaw) + this.pos[0]*Math.sin(-this.yaw); // (this makes y = 0) the point is now on the xz plane
 						let sideradius = Math.hypot(flatx-this.origin[0], this.pos[2]-this.origin[2]);
-						this.pitch+=pitch;
 
+						this.pitch+=pitch;
 						if(this.pitch >= 2*Math.PI){
 							this.pitch -= 2*Math.PI;
 						} else if(this.pitch < 0){
 							this.pitch += 2*Math.PI;
 						}
+
+						if(this.pitch > 0.5*Math.PI && this.pitch < Math.PI){
+							this.pitch = 0.5*Math.PI-0.0000001;
+						} else if(this.pitch < 1.5*Math.PI && this.pitch > Math.PI){
+							this.pitch = 1.5*Math.PI-0.0000001;
+						}
+						//console.log(this.pitch);
 
 						let newflatx = sideradius * Math.cos(this.pitch);
 						let newflatz = sideradius * Math.sin(this.pitch);
@@ -219,6 +252,16 @@
 
 				}
 				slide(x,y){
+
+				}
+				zoom(inout){
+					let vect = [0,0,0];
+					for(var i = 0; i < 3; i++){
+						vect[i] = this.vector[i]/initcamdist;
+						this.pos[i]+=Math.sqrt(0.004*initcamdist**2)*vect[i]*inout;
+					}
+					initcamdist += Math.sqrt(0.012*initcamdist**2)*inout;
+					refresh();
 
 				}
 			}
@@ -295,7 +338,7 @@
 			originpoints.push(new Point(0,-6,0,"lime"));
 			originpoints.push(new Point(0,0,-6,"rgba(120,120,255,1)"));
 
-			let netcolor = "rgba(255,255,0,0.4)";
+			let netcolor = "rgba(255,255,0,0.6)";
 			let cube = [
 				new Point(6,6,6,netcolor), //counting up in binary with negatives
 				new Point(6,6,-6,netcolor),
@@ -340,18 +383,28 @@
 				}
 				ctx.lineWidth = 1;
 				ctx.strokeStyle = netcolor;
-				for(let dot1 of dots){
-					dot1.draw();
-					for(let dot2 of dots){
+				for(var i = 0; i < dots.length; i++){
+					dots[i].draw();
+					for(var j = i+1; j < dots.length; j++){
 						ctx.beginPath();
-						ctx.moveTo(dot1.x,dot1.y);
-						ctx.lineTo(dot2.x, dot2.y);
+						ctx.moveTo(dots[i].x, dots[i].y);
+						ctx.lineTo(dots[j].x, dots[j].y);
 						ctx.stroke();
 					}
 				}
+
+				// for(let dot1 of dots){
+				// 	dot1.draw();
+				// 	for(let dot2 of dots){
+				// 		ctx.beginPath();
+				// 		ctx.moveTo(dot1.x,dot1.y);
+				// 		ctx.lineTo(dot2.x, dot2.y);
+				// 		ctx.stroke();
+				// 	}
+				// }
 			}
 
-			function tempmove(){
+			function refresh(){
 
 				fillscreen();
 				camera.update();
@@ -368,6 +421,11 @@
 				ctx.fillStyle = "rgba(255, 245, 80, 1)";
 				ctx.fillText("brian's 3d projector :D", canvas.width/54, canvas.height/12);
 
+				ctx.font = canvas.width / 30 + "px Arial";
+				if(pause){
+      		ctx.fillText("paused", 35*canvas.width/40, 19*canvas.height/20);
+				}
+
 				ctx.fillStyle = "white"; //origin dot
 				ctx.beginPath();
 				ctx.arc(xcenter, ycenter, 4, 0, 2 * Math.PI);
@@ -375,14 +433,33 @@
 
 				burnTimeSlider.draw(4*canvas.width/20, 5*canvas.height/40);
 				camdistSlider.draw(4*canvas.width/20, 10*canvas.height/40);
+
+				ctx.font = canvas.width / 100 + "px Arial";
+				ctx.fillStyle = "rgba(255, 245, 80, 1)";
+				let notes =["Pitch/Yaw - Right Mouse",
+										"Slide (translate) - Middle Mouse (not yet)",
+										"Zoom - Scrollwheel",
+										"Toggle Spinning - Spacebar",
+										"Interact - Left Mouse (not yet)"];
+				let spacing = canvas.width/60;
+				for(var i = 0; i < notes.length; i++){
+					ctx.fillText(notes[i], canvas.width/30, 18*canvas.height/40 + spacing*i);
+				}
+
 			}
 			setInterval(function(){
-				if(click){
-					tempmove();
+				if(!pause && (butt <= 0)){
+					camera.orbit(0.01,0);
+					refresh();
+
+				}
+				//refresh()
+				if(butt!==-1){ //if not clicking
+					refresh();
 					//testpoint.pos[2]-=0.1;
 					//console.log(testpoint.pos)
 				}
-			}, 20);
+			}, 1);
 
 
 			window.onresize = canvasResize;
@@ -395,8 +472,8 @@
 				xcenter = canvas.width/2;
 				ycenter = canvas.height/2;
 				if(initialize != true){
-					tempmove();
-					console.log("boop")
+					refresh();
+					//console.log("boop")
 				}
 			}
 
