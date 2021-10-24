@@ -73,37 +73,39 @@
       //https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
 			canvas.addEventListener('drop', handleDrop, false);
 			function handleDrop(e) {
-			  let dt = e.dataTransfer;
-			  let files = dt.files;
-			  handleFiles(files);
+				if(e.dataTransfer.files.length > 1){
+					console.log("too many files")
+					return;
+				}
+			  let file = e.dataTransfer.files[0];
+				console.log(e.dataTransfer.types)
+				console.log(e.dataTransfer.getData("text"))
+				//uploadFile(file);
 			}
-			function handleFiles(files) {
-		  	([...files]).forEach(uploadFile)
-				//([...files]).forEach(previewFile)
-			}
-			function uploadFile(file) {
-			  let url = 'https://wubran.github.io/3d/3d.html'
-			  let formData = new FormData()
 
-			  formData.append('file', file)
-				previewFile(file)
-
-			  fetch(url, {
-			    method: 'POST',
-			    body: formData
-			  })
-			  .then(() => { console.log("ggs nice") })
-			  .catch(() => { console.log("uh oh thats bad") })
-			}
-			function previewFile(file) {
-			  let reader = new FileReader()
-			  reader.readAsDataURL(file)
-			  reader.onloadend = function() {
-			    let img = document.createElement('img')
-			    img.src = reader.result
-			    document.getElementById('gallery').appendChild(img)
-			  }
-			}
+			// function uploadFile(file) {
+			//   let url = 'https://wubran.github.io/3d/3d.html'
+			//   let formData = new FormData()
+			//
+			//   formData.append('file', file)
+			// 	previewFile(file)
+			//
+			//   fetch(url, {
+			//     method: 'POST',
+			//     body: formData
+			//   })
+			//   .then(() => { console.log("ggs nice") })
+			//   .catch(() => { console.log("uh oh thats bad") })
+			// }
+			// function previewFile(file) {
+			//   let reader = new FileReader()
+			//   reader.readAsDataURL(file)
+			//   reader.onloadend = function() {
+			//     let img = document.createElement('img')
+			//     img.src = reader.result
+			//     document.getElementById('gallery').appendChild(img)
+			//   }
+			// }
 
 
 			function getBurntime(){return burntime;}
