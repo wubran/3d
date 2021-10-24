@@ -85,6 +85,7 @@
 			  let formData = new FormData()
 
 			  formData.append('file', file)
+				//console.log(formData)
 
 			  fetch(url, {
 			    method: 'POST',
@@ -92,8 +93,17 @@
 			  })
 			  .then(() => { /* Done. Inform the user */ })
 			  .catch(() => { /* Error. Inform the user */ })
-				console.log("file gotten")
-				console.log(formData)
+				//console.log("file gotten")
+				previewFile(formData);
+			}
+			function previewFile(file) {
+			  let reader = new FileReader()
+			  reader.readAsDataURL(file)
+			  reader.onloadend = function() {
+			    let img = document.createElement('img')
+			    img.src = reader.result
+			    document.getElementById('gallery').appendChild(img)
+			  }
 			}
 
 
