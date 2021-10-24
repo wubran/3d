@@ -61,6 +61,42 @@
 				}
 			}, false);
 
+			;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+			  canvas.addEventListener(eventName, preventDefaults, false)
+			})
+
+			function preventDefaults (e) {
+			  e.preventDefault()
+			  e.stopPropagation()
+			}
+
+      //https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+			canvas.addEventListener('drop', handleDrop, false);
+			function handleDrop(e) {
+			  let dt = e.dataTransfer;
+			  let files = dt.files;
+			  handleFiles(files);
+			}
+			function handleFiles(files) {
+		  	([...files]).forEach(uploadFile)
+			}
+			function uploadFile(file) {
+			  let url = 'https://wubran.github.io/3d/3d.html'
+			  let formData = new FormData()
+
+			  formData.append('file', file)
+
+			  fetch(url, {
+			    method: 'POST',
+			    body: formData
+			  })
+			  .then(() => { /* Done. Inform the user */ })
+			  .catch(() => { /* Error. Inform the user */ })
+				console.log("file gotten")
+				console.log(formData)
+			}
+
+
 			function getBurntime(){return burntime;}
 			function setBurntime(setTo){burntime = setTo;}
 			var burnTimeSlider = new Slider("idk lol", 0.5, 0, 1, canvas.width/10, setBurntime, canvas.height/2.5, getBurntime, 2)
@@ -98,11 +134,7 @@
 					camera.orbit(-20*diffx/(canvas.width), 20*diffy/(canvas.width));
 
 				}else if(sliding){
-					let scalefac = camdistort/Math.hypot(camera.vector[0], camera.vector[1], camera.vector[2]);
-					camera.pdist *= scalefac;
-					for(var i = 0; i < 3; i++){
-						camera.pos[i] *= scalefac;
-					}
+					updatefov();
 					refresh();
 				}
 				clickstart = [mouseX,mouseY];
@@ -231,11 +263,12 @@
 				zoom(inout){
 					let vect = [0,0,0];
 					for(var i = 0; i < 3; i++){
-						vect[i] = this.vector[i]/initcamdist;
+						vect[i] = this.vector[i]/(initcamdist);
 						this.pos[i]+=Math.sqrt(0.004*initcamdist**2)*vect[i]*inout;
 					}
 					initcamdist += Math.sqrt(0.012*initcamdist**2)*inout;
 					refresh();
+					updatefov();
 
 				}
 			}
@@ -364,6 +397,14 @@
 				// 		ctx.stroke();
 				// 	}
 				// }
+			}
+
+			function updatefov(){
+				let scalefac = (initcamdist*camdistort/50)/(Math.hypot(camera.vector[0], camera.vector[1], camera.vector[2]));
+				camera.pdist *= scalefac;
+				for(var i = 0; i < 3; i++){
+					camera.pos[i] *= scalefac;
+				}
 			}
 
 			function refresh(){
