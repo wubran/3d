@@ -79,6 +79,8 @@
 			}
 			function handleFiles(files) {
 		  	([...files]).forEach(uploadFile)
+				([...files]).forEach(previewFile)
+
 			}
 			function uploadFile(file) {
 			  let url = 'https://wubran.github.io/3d/3d.html'
@@ -91,10 +93,8 @@
 			    method: 'POST',
 			    body: formData
 			  })
-			  .then(() => { /* Done. Inform the user */ })
-			  .catch(() => { /* Error. Inform the user */ })
-				//console.log("file gotten")
-				previewFile(formData);
+			  .then(() => { console.log("ggs nice") })
+			  .catch(() => { console.log("uh oh thats bad") })
 			}
 			function previewFile(file) {
 			  let reader = new FileReader()
