@@ -79,15 +79,14 @@
 			}
 			function handleFiles(files) {
 		  	([...files]).forEach(uploadFile)
-				([...files]).forEach(previewFile)
-
+				//([...files]).forEach(previewFile)
 			}
 			function uploadFile(file) {
 			  let url = 'https://wubran.github.io/3d/3d.html'
 			  let formData = new FormData()
 
 			  formData.append('file', file)
-				//console.log(formData)
+				previewFile(file)
 
 			  fetch(url, {
 			    method: 'POST',
