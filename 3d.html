@@ -86,21 +86,25 @@
 					arry = []
 					ignorebytes = 84;
 					iterations = (reader.result.byteLength-ignorebytes)/50
+
 					for(var i = 0; i<iterations; i++){
 						let coords = new Float32Array(reader.result.slice(ignorebytes+i*50, ignorebytes+48+i*50))
 						let triangle = []
 						triangle.push(coords.slice(0,3)) // bytes 0, 1, 2 are the normal vector
+						var red = 60 * 1.3 * triangle[0][0] + 200;
+						var green = 60 * 1.3 * triangle[0][1] + 200;
+						var blue = 60 * 1.3 * triangle[0][2]  + 200;
+						var color = "rgba("+red+","+green+","+blue+",0.6)" //colors based on normal vector
 						for(var j = 0; j<3; j++){
-							triangle.push(new Point(coords[3+3*j], coords[3+3*j+1], coords[3+3*j+2], "pink"))
+							triangle.push(new Point(coords[3+3*j], coords[3+3*j+1], coords[3+3*j+2], color))
 						}
-						let seed = Math.random()*2*Math.PI;
-						var red = 60 * 1.3 * Math.sin(seed) + 200;
-						var green = 60 * 1.3 * Math.sin(seed+2*Math.PI/3) + 200;
-						var blue = 60 * 1.3 * Math.sin(seed+4*Math.PI/3) + 200;
-						triangle.push("rgba("+red+","+green+","+blue+",0.6)")
+
+						triangle.push(color)
 						arry.push(triangle)
 					}
 					console.log(arry)
+					console.log(arry.length + " triangles")
+
 					meshes.push(arry)
 					drawmesh(arry)
 				}
@@ -411,7 +415,6 @@
 
 			function drawmesh(mesh){
 				ctx.lineWidth = 1;
-				ctx.strokeStyle = netcolor;
 				for(let triangle of mesh){
 					triangle[3].project(camera)
 					for(var i = 1; i < 4; i++){
@@ -421,6 +424,7 @@
 					}
 
 					ctx.fillStyle = triangle[4];
+					ctx.strokeStyle = triangle[4];
 
 					ctx.beginPath();
 					ctx.moveTo(triangle[3].x, triangle[3].y);
@@ -458,8 +462,8 @@
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
 				ctx.textAlign = "left"
 
-				burnTimeSlider.draw(4*canvas.width/20, 13*canvas.height/40);
-				camdistSlider.draw(4*canvas.width/20, 18*canvas.height/40);
+				burnTimeSlider.draw(4*canvas.width/20, 14*canvas.height/40);
+				camdistSlider.draw(4*canvas.width/20, 19*canvas.height/40);
 
 				ctx.font = canvas.width / 40 + "px Arial";
 				ctx.fillStyle = blurple;
@@ -468,10 +472,11 @@
 				ctx.fillStyle = gray;
 				ctx.font = canvas.width / 90 + "px Arial";
 				let notes =["Pitch/Yaw - Right Mouse",
-										"Slide (translate) - Middle Mouse (not yet)",
-										"Zoom - Scrollwheel",
-										"Toggle Spinning - Spacebar",
-										"Interact - Left Mouse (not yet)"];
+									"Slide (translate) - Middle Mouse (not yet)",
+									"Zoom - Scrollwheel",
+									"Toggle Spinning - Spacebar",
+									"Interact - Left Mouse (not yet)",
+									"Drag in a Binary STL file to view."];
 				let spacing = canvas.width/60;
 				for(var i = 0; i < notes.length; i++){
 					ctx.fillText(notes[i], canvas.width/30, 6*canvas.height/40 + spacing*i);
@@ -487,8 +492,10 @@
 				//displays the mesh points
 				ctx.textAlign = "center"
 				ctx.font = canvas.width / 90 + "px Arial";
-				for(var i = 0; i < notes.length; i++){
-					ctx.fillText(cube[i].pos, 28*canvas.width/30, 2*canvas.height/40 + spacing*(i+1));
+				for(var i = 0; i < meshes.length; i++){
+				// 		ctx.fillText(meshes[i][j], 28*canvas.width/30, 2*canvas.height/40 + spacing*(j+1));
+					ctx.fillText("1: " + meshes[i].length + " triangles", 28*canvas.width/30, 2*canvas.height/40 + spacing*(i+1));
+
 				}
 				ctx.fillStyle = blurple;
 				ctx.font = canvas.width / 80 + "px Arial";
