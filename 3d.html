@@ -13,7 +13,7 @@
 			canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
 			//^prevents right click menu (credit to https://stackoverflow.com/questions/10864249/disabling-right-click-context-menu-on-a-html-canvas)
 
-			items = []
+			meshes = []
 
 			var butt = 0; // 0 left, 1 middle, 2 right
 			var mouseX = 0;
@@ -30,6 +30,7 @@
 			var burntime = 1;
 			var sliding = false;
 			var clickstart = [0,0];
+			var dotradius = 2;
 
 			canvasResize(true);
 
@@ -78,34 +79,26 @@
 					return;
 				}
 			  let file = e.dataTransfer.files[0];
-				console.log(e.dataTransfer.types)
-				console.log(e.dataTransfer.getData("text"))
-				//uploadFile(file);
-			}
 
-			// function uploadFile(file) {
-			//   let url = 'https://wubran.github.io/3d/3d.html'
-			//   let formData = new FormData()
-			//
-			//   formData.append('file', file)
-			// 	previewFile(file)
-			//
-			//   fetch(url, {
-			//     method: 'POST',
-			//     body: formData
-			//   })
-			//   .then(() => { console.log("ggs nice") })
-			//   .catch(() => { console.log("uh oh thats bad") })
-			// }
-			// function previewFile(file) {
-			//   let reader = new FileReader()
-			//   reader.readAsDataURL(file)
-			//   reader.onloadend = function() {
-			//     let img = document.createElement('img')
-			//     img.src = reader.result
-			//     document.getElementById('gallery').appendChild(img)
-			//   }
-			// }
+			  let reader = new FileReader()
+			  reader.readAsArrayBuffer(file)
+			  reader.onloadend = function() {
+					arry = []
+					iterations = (reader.result.byteLength-84)/50
+					for(var i = 0; i<iterations; i++){
+						let coords = new Float32Array(reader.result.slice(84+i*50, 132+i*50))
+						let triangle = []
+						triangle.push(coords.slice(0,3))
+						for(var j = 0; j<3; j++){
+							triangle.push(new Point(coords[2+3*j], coords[2+3*j+1], coords[2+3*j+2], "pink"))
+						}
+						arry.push(triangle)
+					}
+					console.log(arry)
+					meshes.push(arry)
+					drawmesh(arry)
+				}
+			}
 
 
 			function getBurntime(){return burntime;}
@@ -341,7 +334,7 @@
 					// } //issue: pointsize would change with the perspective disortion
 					ctx.fillStyle = this.color;
 					ctx.beginPath();
-					ctx.arc(this.x, this.y, 4, 0, 2 * Math.PI);
+					ctx.arc(this.x, this.y, dotradius, 0, 2 * Math.PI);
 					ctx.fill();
 					//console.log("ok")
 				}
@@ -410,6 +403,25 @@
 				// }
 			}
 
+			function drawmesh(mesh){
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = netcolor;
+				for(let triangle of mesh){
+					triangle[3].project(camera)
+					for(var i = 1; i < 4; i++){
+						triangle[i].project(camera)
+						triangle[i].draw()
+						//console.log("point!")
+					}
+					ctx.beginPath();
+					ctx.moveTo(triangle[3].x, triangle[3].y);
+					for(var i = 1; i < 4; i++){
+						ctx.lineTo(triangle[i].x, triangle[i].y);
+					}
+					ctx.stroke();
+				}
+			}
+
 			function updatefov(){
 				let scalefac = (initcamdist*camdistort/50)/(Math.hypot(camera.vector[0], camera.vector[1], camera.vector[2]));
 				camera.pdist *= scalefac;
@@ -423,7 +435,10 @@
 				fillscreen();
 				camera.update();
 				draworigin();
-				drawnet(cube);
+				for(let mesh of meshes){
+					drawmesh(mesh)
+				}
+				//drawnet(cube);
 				// testpoint.project(camera);
 				// testpoint.draw();
 			}
