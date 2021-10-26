@@ -10,9 +10,6 @@
 			var canvas = document.getElementById('screen');
 			var ctx = canvas.getContext('2d');
 
-			canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
-			//^prevents right click menu (credit to https://stackoverflow.com/questions/10864249/disabling-right-click-context-menu-on-a-html-canvas)
-
 			meshes = []
 
 			var butt = 0; // 0 left, 1 middle, 2 right
@@ -30,9 +27,12 @@
 			var burntime = 1;
 			var sliding = false;
 			var clickstart = [0,0];
-			var dotradius = 2;
+			var dotradius = 1;
+			const toggledots = false;
 
 			canvasResize(true);
+
+			canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
 
 			canvas.addEventListener('mousedown', onClick);
 			canvas.addEventListener("mouseup", onRelease);
@@ -62,6 +62,8 @@
 				}
 			}, false);
 
+			//https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+			//for the basics of getting a file drag input
 			;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
 			  canvas.addEventListener(eventName, preventDefaults, false)
 			})
@@ -71,7 +73,6 @@
 			  e.stopPropagation()
 			}
 
-      //https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
 			canvas.addEventListener('drop', handleDrop, false);
 			function handleDrop(e) {
 				if(e.dataTransfer.files.length > 1){
@@ -131,17 +132,17 @@
 					console.log(arry.length + " triangles")
 
 					meshes.push(arry)
-					drawmesh(arry)
+					refresh()
 				}
 			}
 
 
 			function getBurntime(){return burntime;}
 			function setBurntime(setTo){burntime = setTo;}
-			var burnTimeSlider = new Slider("idk lol", 0.5, 0, 1, canvas.width/10, setBurntime, canvas.height/2.5, getBurntime, 2)
+			var burnTimeSlider = new Slider("idk lol", 0.5, 0, 1, canvas.width/10, setBurntime, canvas.width/5, getBurntime, 2)
 			function getCamdist(){return 100/camdistort;}
 			function setCamdist(setTo){camdistort = 100/setTo;}
-			var camdistSlider = new Slider("perspective distortion", 100/camdistort, 100/100000, 100/10, canvas.width/10, setCamdist, canvas.height/2.5, getCamdist, 2)
+			var camdistSlider = new Slider("perspective distortion", 100/camdistort, 100/100000, 100/10, canvas.width/10, setCamdist, canvas.width/5, getCamdist, 2)
 			//(name, value, minimum, maximum, containerWidth, updateFunc, container, checkUpdateFunc, roundPlaces)
 
 			function onClick(event){
@@ -444,7 +445,9 @@
 					triangle[3].project(camera)
 					for(var i = 1; i < 4; i++){
 						triangle[i].project(camera)
-						triangle[i].draw()
+						if(toggledots){
+							triangle[i].draw()
+						}
 						//console.log("point!")
 					}
 
@@ -488,7 +491,7 @@
 				ctx.textAlign = "left"
 
 				burnTimeSlider.draw(4*canvas.width/20, 14*canvas.height/40);
-				camdistSlider.draw(4*canvas.width/20, 19*canvas.height/40);
+				camdistSlider.draw(4*canvas.width/20, 19*canvas.height/40); //
 
 				ctx.font = canvas.width / 40 + "px Arial";
 				ctx.fillStyle = blurple;
@@ -519,12 +522,12 @@
 				ctx.font = canvas.width / 90 + "px Arial";
 				for(var i = 0; i < meshes.length; i++){
 				// 		ctx.fillText(meshes[i][j], 28*canvas.width/30, 2*canvas.height/40 + spacing*(j+1));
-					ctx.fillText("1: " + meshes[i].length + " triangles", 28*canvas.width/30, 2*canvas.height/40 + spacing*(i+1));
+					ctx.fillText((i+1) + ": " + meshes[i].length + " triangles", 28*canvas.width/30, 2*canvas.height/40 + spacing*(i+1));
 
 				}
 				ctx.fillStyle = blurple;
 				ctx.font = canvas.width / 80 + "px Arial";
-				ctx.fillText("Mesh Points:", 28*canvas.width/30, 2*canvas.height/40);
+				ctx.fillText("Meshes:", 28*canvas.width/30, 2*canvas.height/40);
 
 				ctx.fillStyle = "white"; //origin dot
 				ctx.beginPath();
@@ -554,6 +557,11 @@
 			  ctx.fillRect(0, 0, canvas.width, canvas.height);
 				xcenter = canvas.width/2;
 				ycenter = canvas.height/2;
+				//burnTimeSlider.
+				//camdistSlider.
+				burnTimeSlider = new Slider("idk lol", 0.5, 0, 1, canvas.width/10, setBurntime, canvas.width/5, getBurntime, 2)
+				camdistSlider = new Slider("perspective distortion", 100/camdistort, 100/100000, 100/10, canvas.width/10, setCamdist, canvas.width/5, getCamdist, 2)
+
 				if(initialize != true){
 					refresh();
 					//console.log("boop")
