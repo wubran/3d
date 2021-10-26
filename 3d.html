@@ -85,9 +85,9 @@
 			  reader.onloadend = function() {
 					arry = []
 					ignorebytes = 84;
-					iterations = (reader.result.byteLength-ignorebytes)/50
-
-					for(var i = 0; i<iterations; i++){
+					iterations = (reader.result.byteLength-ignorebytes)/50 //numbrt of triangles
+					extremes = [0,0,0,0,0,0] //-x,-y,-z,x,y,z,
+					for(var i = 0; i<iterations; i++){ //i for triangle
 						let coords = new Float32Array(reader.result.slice(ignorebytes+i*50, ignorebytes+48+i*50))
 						let triangle = []
 						triangle.push(coords.slice(0,3)) // bytes 0, 1, 2 are the normal vector
@@ -95,13 +95,38 @@
 						var green = 60 * 1.3 * triangle[0][1] + 200;
 						var blue = 60 * 1.3 * triangle[0][2]  + 200;
 						var color = "rgba("+red+","+green+","+blue+",0.6)" //colors based on normal vector
-						for(var j = 0; j<3; j++){
-							triangle.push(new Point(coords[3+3*j], coords[3+3*j+1], coords[3+3*j+2], color))
+						for(var j = 0; j<3; j++){ //j for point
+							let xyz = [coords[3+3*j],coords[3+3*j+1],coords[3+3*j+2]]
+							if(i==0){
+								extremes = [xyz[0], xyz[1], xyz[2], xyz[0], xyz[1], xyz[2]]
+							}
+							triangle.push(new Point(xyz[0], xyz[1], xyz[2], color))
+							for(var k = 0; k<3; k++){ //k for xyz
+								if(xyz[k]<extremes[k]){ //check if minimum
+									extremes[k] = xyz[k]
+								}else if(xyz[k]>extremes[k+3]){ //check if maximum
+									extremes[k+3] = xyz[k]
+								}
+							}
 						}
-
 						triangle.push(color)
 						arry.push(triangle)
 					}
+					console.log(extremes)
+
+					let centerVector = [0,0,0];
+					for(var i = 0; i<3; i++){
+						centerVector[i]=(extremes[i+3]+extremes[i])/2
+					}
+					console.log(centerVector)
+					for(let triangle of arry){
+						for(var i = 1; i < 4; i++){ // i for each point
+							for(var j = 0; j < 3; j++){ // j for xyz
+								triangle[i].pos[j] -= centerVector[j]
+							}
+						}
+					}
+
 					console.log(arry)
 					console.log(arry.length + " triangles")
 
