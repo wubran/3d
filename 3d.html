@@ -28,7 +28,9 @@
 			var sliding = false;
 			var clickstart = [0,0];
 			var dotradius = 1;
-			const toggledots = false;
+			var toggledots = false;
+			var togglelines = false;
+
 
 			canvasResize(true);
 
@@ -86,7 +88,7 @@
 			  reader.onloadend = function() {
 					arry = []
 					ignorebytes = 84;
-					iterations = (reader.result.byteLength-ignorebytes)/50 //numbrt of triangles
+					iterations = (reader.result.byteLength-ignorebytes)/50 //number of triangles
 					extremes = [0,0,0,0,0,0] //-x,-y,-z,x,y,z,
 					for(var i = 0; i<iterations; i++){ //i for triangle
 						let coords = new Float32Array(reader.result.slice(ignorebytes+i*50, ignorebytes+48+i*50))
@@ -324,7 +326,7 @@
 					this.y = 0;
 					this.color = color;
 				}
-				project(cam){
+				project(cam){ // Note: process explanation below may not be 100% accurate
 					// r(t) = {x0, y0, z0} + t{xc-x0, xc-y0, xc-z0} example: x0 + t(xc-x0) = x(t) is x component of the line where x0y0z0 is POINT
 					// plane: a(x-xp) + b(y-yp) + c(z-zp) = 0 where xpypzp is planepoint and abc is vector
 					// plane: ax + by + cz = axp + byp + czp
@@ -336,7 +338,7 @@
 					// 2: find plane
 					// 3: find line from projecting point to camera focus
 					// 4: find the intersection between line and plane
-					// 5:
+					// 5: find the new basis vectors for the plane and use them to convert to flat
 					let stepone = cam.pconst;
 					let steptwo = 0;
 					for(var i = 0; i < 3; i++){
@@ -427,40 +429,40 @@
 						ctx.stroke();
 					}
 				}
-
-				// for(let dot1 of dots){
-				// 	dot1.draw();
-				// 	for(let dot2 of dots){
-				// 		ctx.beginPath();
-				// 		ctx.moveTo(dot1.x,dot1.y);
-				// 		ctx.lineTo(dot2.x, dot2.y);
-				// 		ctx.stroke();
-				// 	}
-				// }
 			}
 
 			function drawmesh(mesh){
 				ctx.lineWidth = 1;
 				for(let triangle of mesh){
-					triangle[3].project(camera)
-					for(var i = 1; i < 4; i++){
-						triangle[i].project(camera)
-						if(toggledots){
-							triangle[i].draw()
+					let cull = 0;
+					for(var j = 0; j < 3; j++){ // dot product of cam position and triangle pos
+						cull += (triangle[1].pos[j]-camera.pos[j])*triangle[0][j];
+					}
+					// console.log()
+					if(cull < 0){ // culling
+						triangle[3].project(camera)
+						for(var i = 1; i < 4; i++){
+							triangle[i].project(camera)
+							if(toggledots){
+								triangle[i].draw()
+							}
 						}
-						//console.log("point!")
-					}
 
-					ctx.fillStyle = triangle[4];
-					ctx.strokeStyle = triangle[4];
+						ctx.fillStyle = triangle[4];
+						if(togglelines){
+							ctx.strokeStyle = triangle[4];
+						} else {
+							ctx.strokeStyle = "rgba(0,0,0,0)";
+						}
 
-					ctx.beginPath();
-					ctx.moveTo(triangle[3].x, triangle[3].y);
-					for(var i = 1; i < 4; i++){
-						ctx.lineTo(triangle[i].x, triangle[i].y);
+						ctx.beginPath();
+						ctx.moveTo(triangle[3].x, triangle[3].y);
+						for(var i = 1; i < 4; i++){
+							ctx.lineTo(triangle[i].x, triangle[i].y);
+						}
+						ctx.fill();
+						ctx.stroke();
 					}
-					ctx.fill();
-					ctx.stroke();
 				}
 			}
 
@@ -545,7 +547,7 @@
 				if(butt!==-1){ //if not clicking
 					refresh();
 				}
-			}, 1);
+			}, 1000/60);
 
 
 			window.onresize = canvasResize;
